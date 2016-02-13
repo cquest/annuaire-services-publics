@@ -1,3 +1,8 @@
+# Ecrit par Christian Quest le 13/2/2016
+#
+# ce code est sous licence WTFPL
+# dernière version disponible sur https://github.com/cquest/annuaire-services-publics
+
 from bs4 import BeautifulSoup
 import requests
 import sys
@@ -5,13 +10,18 @@ import re
 import json
 
 html = BeautifulSoup(open(sys.argv[1]),'html.parser')
-f = dict(id=re.sub(r"^.*_", "", sys.argv[1]), source="http://"+sys.argv[1])
 
+# si pas de date de mise à jou c'est qu'on est sur une liste
 if html.find(id='contentLastUpdate') is None:
     sys.exit(0)
 
+# id utilisé sur le site de la DILA que l'on conserve
+f = dict(id=re.sub(r"^.*_", "", sys.argv[1]), source="http://"+sys.argv[1])
+
+# type d'entité
 f.update(type=re.sub('.*/(.*)_.*','\\1',sys.argv[1]))
 
+# date de mise à jour des informations
 u = re.sub(' - .*$','',html.find(id='contentLastUpdate').string)
 # transforme "01 octobre 2015" en "2015-octobre-01"
 u = re.sub('(.*) (.*) (.*)','\\3-\\2-\\1',u)
@@ -19,9 +29,10 @@ u = re.sub('(.*) (.*) (.*)','\\3-\\2-\\1',u)
 mois = {'janvier':'01','février':'02','mars':'03','avril':'04','mai':'05','juin':'06','juillet':'07','août':'08','septembre':'09','octobre':'10','novembre':'11','décembre':'12'}
 for t, n in mois.items():
     u = u.replace(t, n)
-
-f.update(name=html.find(id='contentTitle').string)
 f.update(update=u)
+
+# nom de l'entité + coordonnées (fax, téléphone, email, formulaire contact, sites web)
+f.update(name=html.find(id='contentTitle').string)
 if html.find(id="contentFax_1") is not None:
   f.update(contact_fax=html.find(id="contentFax_1").string)
 if html.find(id="contentPhone_1") is not None:
@@ -57,7 +68,7 @@ if adresse is not None:
 
   f.update(writeAddress=adr)
 
-
+# lien avec parent
 bc = html.find(class_="breadcrumb")
 if bc is not None:
     bc = bc.find_all("span")
@@ -65,6 +76,7 @@ if bc is not None:
     f.update(parent_name=parent.string)
     f.update(parent_id=re.sub(r"[^0-9]*", "",parent.get("href")))
 
+# responsables (ordre, nom, titre, fonction, email, téléphone, fax)
 if html.find(class_="list-responsable") is not None:
     resp_noms = html.find(class_="list-responsable").find_all(id=re.compile("accountable"))
     p = list()
@@ -91,6 +103,7 @@ if html.find(class_="list-responsable") is not None:
         p.append(people)
     f.update(people=p)
 
+# géocodage de l'adresse physique
 if html.find("div",itemprop='address') is not None:
   adr = ''
   if html.find("div",itemprop='address').find(id="contentCountry") is None:
@@ -99,12 +112,15 @@ if html.find("div",itemprop='address') is not None:
         adr = adr + a.string + " "
     adr = re.sub('  ',' ',adr).strip()
     if adr != '':
+      # appel de l'API BAN
       r=requests.get('http://api-adresse.data.gouv.fr/search/',params={'q':adr, 'limit':'1','autocomplete':'0'})
       if len(json.loads(r.text)['features'])>0:
         geocode = json.loads(r.text)['features'][0]
+        # extraction des champs utiles
         geo = dict(score=round(geocode['properties']["score"],2), latitude=geocode['geometry']['coordinates'][1], longitude=geocode['geometry']['coordinates'][0], address_found=geocode['properties']["label"], address_type=geocode['properties']["type"], address_id=geocode['properties']["id"], commune=geocode['properties']["city"], insee_comm=geocode['properties']["citycode"],source="BAN/ODbL 1.0", address_searched=adr)
         f.update(geo=geo)
 
+# texte de référence
 if html.find(id=re.compile("contentReferences")) is not None:
   textes = list()
   for t in html.find_all(id=re.compile("contentReferences")):
