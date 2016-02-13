@@ -128,6 +128,9 @@ if html.find(id=re.compile("contentReferences")) is not None:
     textes.append({ 'title': t.string, 'url': re.sub(' .*','',t.get("href"))})
   f.update(ref=textes)
 
+# texte d'introduction
+if html.find(id="contentIntroduction") is not None:
+  f.update(intro=html.find(id="contentIntroduction").strong.replace_with("").string)
 
 print(json.dumps(f,sort_keys=True, separators=(',', ': ')))
 
