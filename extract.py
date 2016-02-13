@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import requests
 import sys
 import re
 import json
@@ -88,6 +89,20 @@ if html.find(class_="list-responsable") is not None:
                 people.update(phone=c.string)
         p.append(people)
     f.update(people=p)
+
+if html.find("div",itemprop='address') is not None:
+  adr = ''
+  if html.find("div",itemprop='address').find(id="contentCountry") is None:
+    for a in html.find("div",itemprop='address').find_all(id="contentAddressName"):
+      if a.string is not None:
+        adr = adr + a.string + " "
+    adr = re.sub('  ',' ',adr)
+    if adr != '':
+      r=requests.get('http://api-adresse.data.gouv.fr/search/',params={'q':adr, 'limit':'1','autocomplete':'0'})
+      if len(json.loads(r.text)['features'])>0:
+        geocode = json.loads(r.text)['features'][0]
+        geo = dict(score=round(geocode['properties']["score"],2), latitude=geocode['geometry']['coordinates'][1], longitude=geocode['geometry']['coordinates'][0], address_found=geocode['properties']["label"], address_type=geocode['properties']["type"], address_id=geocode['properties']["id"], commune=geocode['properties']["city"], insee_comm=geocode['properties']["citycode"],source="BAN/ODbL 1.0", address_searched=adr)
+        f.update(geo=geo)
 
 print(json.dumps(f,sort_keys=True, separators=(',', ': ')))
 
