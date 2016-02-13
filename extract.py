@@ -71,14 +71,15 @@ if html.find(class_="list-responsable") is not None:
     num = 0
     for resp in resp_noms:
         personne = resp.find_parent("div")
-        people = dict(fonction=personne.find("h3").string.strip())
+        people = dict(role=personne.find("h3").string.strip())
         num = num+1
-        people.update(ordre=num)
+        people.update(order=num)
         nom=re.sub('[, ] .*$','',personne.find(id=re.compile("accountable")).string)
         people.update(name=nom)
-        t=re.sub('^.*[, ] ','',personne.find(id=re.compile("accountable")).string)
+        t=personne.find(id=re.compile("accountable")).string
+        t=t[t.find(',')+1:].strip()
         if t != nom:
-            people.update(titre=t)
+            people.update(title=t)
         for contact in personne.find_all("span"):
             contact_type = contact.string
             c = contact.find_parent("p")
@@ -96,7 +97,7 @@ if html.find("div",itemprop='address') is not None:
     for a in html.find("div",itemprop='address').find_all(id="contentAddressName"):
       if a.string is not None:
         adr = adr + a.string + " "
-    adr = re.sub('  ',' ',adr)
+    adr = re.sub('  ',' ',adr).strip()
     if adr != '':
       r=requests.get('http://api-adresse.data.gouv.fr/search/',params={'q':adr, 'limit':'1','autocomplete':'0'})
       if len(json.loads(r.text)['features'])>0:
