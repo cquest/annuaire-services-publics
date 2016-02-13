@@ -105,5 +105,13 @@ if html.find("div",itemprop='address') is not None:
         geo = dict(score=round(geocode['properties']["score"],2), latitude=geocode['geometry']['coordinates'][1], longitude=geocode['geometry']['coordinates'][0], address_found=geocode['properties']["label"], address_type=geocode['properties']["type"], address_id=geocode['properties']["id"], commune=geocode['properties']["city"], insee_comm=geocode['properties']["citycode"],source="BAN/ODbL 1.0", address_searched=adr)
         f.update(geo=geo)
 
+if html.find(id=re.compile("contentReferences")) is not None:
+  textes = list()
+  for t in html.find_all(id=re.compile("contentReferences")):
+    t.span.extract()
+    textes.append({ 'title': t.string, 'url': re.sub(' .*','',t.get("href"))})
+  f.update(ref=textes)
+
+
 print(json.dumps(f,sort_keys=True, separators=(',', ': ')))
 
