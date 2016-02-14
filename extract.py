@@ -9,7 +9,7 @@ import sys
 import re
 import json
 
-html = BeautifulSoup(open(sys.argv[1]),'html.parser')
+html = BeautifulSoup(open(sys.argv[1]),'lxml')
 
 # si pas de date de mise à jou c'est qu'on est sur une liste
 if html.find(id='contentLastUpdate') is None:
@@ -65,6 +65,8 @@ if adresse is not None:
       adr.update(postalCode=adresse.find(itemprop="postalCode").string.strip())
   if adresse.find(itemprop="addressLocality") is not None:
     adr.update(addressLocality=adresse.find(itemprop="addressLocality").string)
+  if adresse.find(itemprop="addressCountry") is not None:
+    adr.update(addressCountry=adresse.find(itemprop="addressCountry").string)
 
   f.update(writeAddress=adr)
 
