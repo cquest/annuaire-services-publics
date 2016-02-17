@@ -109,7 +109,8 @@ if html.find(class_="list-responsable") is not None:
             if (contact_type == "Téléphone : "):
                 people.update(phone=c.string)
         p.append(people)
-    f.update(people=p)
+    if False: # pas de sortie des données nominatives par défaut
+      f.update(people=p)
 
 # géocodage de l'adresse physique
 if html.find("div",itemprop='address') is not None:
