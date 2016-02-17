@@ -73,10 +73,16 @@ if adresse is not None:
 # lien avec parent
 bc = html.find(class_="breadcrumb")
 if bc is not None:
-    bc = bc.find_all("span")
-    parent = bc[len(bc)-2].find("a")
-    f.update(parent_name=parent.string)
-    f.update(parent_id=re.sub(r"[^0-9]*", "",parent.get("href")))
+  bc = bc.find_all("span")
+  f.update(parents=int((len(bc))/2)-1)
+  parents = list()
+  for parent in bc[2:]:
+    if parent.find("a") is not None:
+      parents.append(parent.find("a").string)
+  f.update(parents_name=parents)
+  parent = bc[len(bc)-2].find("a")
+  f.update(parent_name=parent.string)
+  f.update(parent_id=re.sub(r"[^0-9]*", "",parent.get("href")))
 
 # responsables (ordre, nom, titre, fonction, email, téléphone, fax)
 if html.find(class_="list-responsable") is not None:
